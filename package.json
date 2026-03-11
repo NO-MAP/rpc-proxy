@@ -25,16 +25,19 @@
     "child-process",
     "parent-child"
   ],
-  "author": "",
+  "author": {
+    "name": "no-map",
+    "email": "no_map@163.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/NO-MAP/rpc-proxy"
   },
   "bugs": {
-    "url": ""
+    "url": "https://github.com/NO-MAP/rpc-proxy/issues"
   },
-  "homepage": "",
+  "homepage": "https://github.com/NO-MAP/rpc-proxy#readme",
   "engines": {
     "node": ">=14.0.0"
   },
