@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /a \"d:\\project\\rpc-proxy\")",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

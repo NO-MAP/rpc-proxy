@@ -1,0 +1,11 @@
+src/
+examples/
+*.ts
+*.tsbuildinfo
+tsconfig.json
+.gitignore
+.npmignore
+.vscode/
+.idea/
+.DS_Store
+*.log
