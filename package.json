@@ -1,6 +1,6 @@
 {
   "name": "node-ipc-rpc-proxy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A type-safe, async RPC proxy library for Node.js parent-child process communication using TypeScript interfaces and Proxy objects",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

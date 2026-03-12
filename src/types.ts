@@ -120,14 +120,17 @@ export interface MessagePort {
 }
 
 /**
- * Extract method names and signatures from an interface
+ * Convert a method to async, avoiding double-wrapping if it already returns Promise
  */
 export type AsyncMethod<T> = T extends (...args: infer A) => infer R
-  ? (...args: A) => Promise<R>
+  ? R extends Promise<any>
+    ? T  // Already returns Promise, don't wrap again
+    : (...args: A) => Promise<R>
   : never;
 
 /**
  * Convert all methods in an interface to async methods
+ * Skips methods that already return Promise to avoid double-wrapping
  */
 export type Asyncify<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any
