@@ -70,6 +70,7 @@ export function isValidMessage(msg: unknown): msg is Record<string, unknown> {
  */
 export function isRequestMessage(msg: Record<string, unknown>): msg is { id: string; method: string; args: unknown[] } {
   return (
+    msg.type === 'request' &&
     'method' in msg &&
     typeof msg.method === 'string' &&
     'args' in msg &&
@@ -79,9 +80,10 @@ export function isRequestMessage(msg: Record<string, unknown>): msg is { id: str
 
 /**
  * Check if a message is a response message
+ * Note: result field may be missing if it was undefined during serialization
  */
-export function isResponseMessage(msg: Record<string, unknown>): msg is { id: string; result: unknown } {
-  return 'result' in msg;
+export function isResponseMessage(msg: Record<string, unknown>): msg is { id: string; result?: unknown } {
+  return msg.type === 'response' && !('error' in msg);
 }
 
 /**
@@ -89,6 +91,7 @@ export function isResponseMessage(msg: Record<string, unknown>): msg is { id: st
  */
 export function isErrorMessage(msg: Record<string, unknown>): msg is { id: string; error: SerializedError } {
   return (
+    msg.type === 'error' &&
     'error' in msg &&
     typeof msg.error === 'object' &&
     msg.error !== null &&
@@ -101,6 +104,7 @@ export function isErrorMessage(msg: Record<string, unknown>): msg is { id: strin
  */
 export function isNotificationMessage(msg: Record<string, unknown>): msg is { event: string; data: unknown } {
   return (
+    msg.type === 'notification' &&
     'event' in msg &&
     typeof msg.event === 'string' &&
     'data' in msg

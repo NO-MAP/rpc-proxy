@@ -166,7 +166,8 @@ export class RPCCore {
 
     clearTimeout(pending.timeout);
     this.pendingRequests.delete(id);
-    pending.resolve(msg.result);
+    // result may be undefined or missing (if serialized as undefined)
+    pending.resolve('result' in msg ? msg.result : undefined);
   }
 
   /**
