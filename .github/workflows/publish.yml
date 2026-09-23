@@ -1,0 +1,35 @@
+name: Publish to npm
+
+on:
+  # 方式一：在 GitHub 上创建 Release 时自动发布
+  release:
+    types: [published]
+  # 方式二：在 Actions 页面手动触发
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # 必需：用于 npm Trusted Publishing 的 OIDC 认证
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted Publishing 要求 npm CLI >= 11.5.1
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # 预览将要发布的文件，便于在日志中核查
+      - run: npm pack --dry-run
+
+      # 通过 OIDC 可信发布，无需 NPM_TOKEN
+      - run: npm publish --provenance --access public

@@ -7,6 +7,7 @@ import {
   MessageType,
   PendingRequest,
   RPCProxyOptions,
+  RPCCallOptions,
   MessagePort
 } from './types';
 import {
@@ -315,18 +316,26 @@ export class RPCCore {
 
   /**
    * Send an RPC request and wait for response
+   *
+   * @param method - The method name to call
+   * @param args - Arguments to pass to the method
+   * @param callOptions - Per-call options, e.g. override the timeout for this call only
    */
-  public async sendRequest(method: string, args: unknown[]): Promise<unknown> {
+  public async sendRequest(method: string, args: unknown[], callOptions?: RPCCallOptions): Promise<unknown> {
     const id = generateCorrelationId();
-    const timeout = this.options.timeout || 30000;
+    const timeout = callOptions?.timeout ?? this.options.timeout ?? 30000;
 
     this.log(`Sending request for method: ${method}, id: ${id}`);
 
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        this.pendingRequests.delete(id);
-        reject(new Error(`RPC timeout: ${method} (timeout: ${timeout}ms)`));
-      }, timeout);
+      // timeout <= 0 or Infinity means: wait indefinitely, no timer
+      const hasTimeout = Number.isFinite(timeout) && timeout > 0;
+      const timeoutId = hasTimeout
+        ? setTimeout(() => {
+            this.pendingRequests.delete(id);
+            reject(new Error(`RPC timeout: ${method} (timeout: ${timeout}ms)`));
+          }, timeout)
+        : undefined;
 
       this.pendingRequests.set(id, {
         resolve,

@@ -4,7 +4,7 @@
 
 import { ChildProcess, fork } from 'child_process';
 import { createRPCConnection } from './rpc-proxy';
-import { RPCProxyOptions, Asyncify } from './types';
+import { RPCProxyOptions, Asyncify, WithTimeout } from './types';
 
 /**
  * Create an RPC connection with a child process
@@ -48,7 +48,7 @@ export function createParentRPC<T extends object, C = any>(
   implementation: T,
   options?: RPCProxyOptions
 ): {
-  childProxy: Asyncify<C>;
+  childProxy: WithTimeout<Asyncify<C>>;
   destroy: () => void;
   on: (event: string, handler: (...args: any[]) => void) => void;
   off: (event: string, handler: (...args: any[]) => void) => void;
@@ -70,7 +70,7 @@ export function createParentRPC<T extends object, C = any>(
   const connection = createRPCConnection(childPort, implementation, options);
 
   return {
-    childProxy: connection.proxy as unknown as Asyncify<C>,
+    childProxy: connection.proxy as unknown as WithTimeout<Asyncify<C>>,
     destroy: () => {
       connection.destroy();
       // Optionally kill the child process
@@ -130,7 +130,7 @@ export function forkAndCreateRPC<T extends object, C = any>(
   }
 ): {
   child: ChildProcess;
-  childProxy: Asyncify<C>;
+  childProxy: WithTimeout<Asyncify<C>>;
   destroy: () => void;
   on: (event: string, handler: (...args: any[]) => void) => void;
   off: (event: string, handler: (...args: any[]) => void) => void;
@@ -196,7 +196,7 @@ export function createChildRPCProxy<TParentImpl extends object, TChildAPI extend
   childProcess: ChildProcess,
   implementation: TParentImpl,
   options?: RPCProxyOptions
-): Asyncify<TChildAPI> {
+): WithTimeout<Asyncify<TChildAPI>> {
   const { childProxy } = createParentRPC<TParentImpl, TChildAPI>(childProcess, implementation, options);
   return childProxy;
 }

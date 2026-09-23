@@ -75,7 +75,7 @@ export type RPCMessage = RequestMessage | ResponseMessage | ErrorMessage | Notif
 export interface PendingRequest {
   resolve: (result: unknown) => void;
   reject: (error: Error) => void;
-  timeout: NodeJS.Timeout;
+  timeout?: NodeJS.Timeout;
   timestamp: number;
 }
 
@@ -84,7 +84,8 @@ export interface PendingRequest {
  */
 export interface RPCProxyOptions {
   /**
-   * Default timeout for RPC calls in milliseconds
+   * Default timeout for RPC calls in milliseconds.
+   * Set to 0 (or a negative number / Infinity) to disable timeout and wait indefinitely.
    * @default 30000 (30 seconds)
    */
   timeout?: number;
@@ -149,3 +150,23 @@ export type MethodNames<T> = {
  * Event handler map for notifications
  */
 export type EventHandlerMap = Record<string, Set<(...args: any[]) => void>>;
+
+/**
+ * Per-call options for a single RPC request
+ */
+export interface RPCCallOptions {
+  /**
+   * Timeout for this specific call in milliseconds.
+   * Overrides the connection-level default timeout.
+   * Set to 0 (or a negative number / Infinity) to wait indefinitely.
+   */
+  timeout?: number;
+}
+
+/**
+ * Adds a `withTimeout(ms)` method to a proxy type, allowing
+ * per-call timeout overrides: `proxy.withTimeout(5000).method(args)`
+ */
+export type WithTimeout<T> = T & {
+  withTimeout(timeout: number): T;
+};

@@ -3,7 +3,7 @@
  */
 
 import { createRPCConnection } from './rpc-proxy';
-import { RPCProxyOptions, Asyncify } from './types';
+import { RPCProxyOptions, Asyncify, WithTimeout } from './types';
 
 /**
  * Create an RPC connection in a child process to communicate with parent
@@ -43,7 +43,7 @@ export function createChildRPC<T extends object, P = any>(
   implementation: T,
   options?: RPCProxyOptions
 ): {
-  parentProxy: Asyncify<P>;
+  parentProxy: WithTimeout<Asyncify<P>>;
   destroy: () => void;
   on: (event: string, handler: (...args: any[]) => void) => void;
   off: (event: string, handler: (...args: any[]) => void) => void;
@@ -69,7 +69,7 @@ export function createChildRPC<T extends object, P = any>(
   const connection = createRPCConnection(processPort, implementation, options);
 
   return {
-    parentProxy: connection.proxy as unknown as Asyncify<P>,
+    parentProxy: connection.proxy as unknown as WithTimeout<Asyncify<P>>,
     destroy: connection.destroy,
     on: connection.on,
     off: connection.off,
@@ -109,7 +109,7 @@ export function createChildRPC<T extends object, P = any>(
 export function createChildRPCProxy<TChildImpl extends object, TParentAPI extends object>(
   implementation: TChildImpl,
   options?: RPCProxyOptions
-): Asyncify<TParentAPI> {
+): WithTimeout<Asyncify<TParentAPI>> {
   const { parentProxy } = createChildRPC<TChildImpl, TParentAPI>(implementation, options);
   return parentProxy;
 }

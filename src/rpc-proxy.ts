@@ -3,10 +3,18 @@
  */
 
 import { RPCCore } from './rpc-core';
-import { RPCProxyOptions, Asyncify } from './types';
+import { RPCProxyOptions, Asyncify, WithTimeout } from './types';
 
 /**
  * Create an RPC proxy for calling remote methods
+ *
+ * Supports per-call timeout override via `withTimeout`:
+ *
+ * @example
+ * ```typescript
+ * await proxy.processData('hello');                  // uses connection default timeout
+ * await proxy.withTimeout(5000).processData('hi');   // this call times out after 5s
+ * ```
  *
  * @param rpcCore - The RPC core instance
  * @param interfaceClass - The interface class for type safety
@@ -15,15 +23,22 @@ import { RPCProxyOptions, Asyncify } from './types';
 export function createRPCProxy<T extends object>(
   rpcCore: RPCCore,
   _interfaceClass?: new () => T
-): Asyncify<T> {
-  return new Proxy({} as Asyncify<T>, {
-    get(_target, prop: string) {
-      // Return a function that sends an RPC request
-      return async (...args: unknown[]): Promise<unknown> => {
-        return rpcCore.sendRequest(prop, args);
-      };
-    }
-  });
+): WithTimeout<Asyncify<T>> {
+  const makeProxy = (callTimeout?: number): WithTimeout<Asyncify<T>> =>
+    new Proxy({} as WithTimeout<Asyncify<T>>, {
+      get(_target, prop: string) {
+        // Intercept withTimeout to return a sub-proxy with a per-call timeout
+        if (prop === 'withTimeout') {
+          return (timeout: number) => makeProxy(timeout);
+        }
+        // Return a function that sends an RPC request
+        return async (...args: unknown[]): Promise<unknown> => {
+          return rpcCore.sendRequest(prop, args, { timeout: callTimeout });
+        };
+      }
+    });
+
+  return makeProxy();
 }
 
 /**
@@ -62,7 +77,7 @@ export function createRPCConnection<T extends object>(
   implementation: T,
   options?: RPCProxyOptions
 ): {
-  proxy: Asyncify<T>;
+  proxy: WithTimeout<Asyncify<T>>;
   core: RPCCore;
   destroy: () => void;
   on: (event: string, handler: (...args: any[]) => void) => void;

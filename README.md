@@ -9,7 +9,7 @@ A type-safe, async RPC proxy library for Node.js parent-child process communicat
 - **Bidirectional**: Both parent and child can call each other's methods
 - **Transparent Proxy**: Use remote methods as if they were local
 - **Error Handling**: Automatic error serialization and propagation
-- **Timeout Protection**: Configurable timeouts for RPC calls
+- **Timeout Protection**: Configurable timeouts for RPC calls, with per-call override via `withTimeout()`
 - **Event Support**: Fire-and-forget notifications and event listeners
 - **Zero Dependencies**: Lightweight implementation with no external dependencies
 
@@ -119,7 +119,8 @@ Create an RPC connection with a child process from the parent.
 **Returns:**
 ```typescript
 {
-  childProxy: Asyncify<T>  // Proxy to call child's methods
+  childProxy: WithTimeout<Asyncify<T>>  // Proxy to call child's methods
+                                        // (supports .withTimeout(ms) per call)
   destroy: () => void      // Clean up connection
   on: (event, handler) => void    // Register event listener
   off: (event, handler) => void   // Unregister event listener
@@ -168,7 +169,8 @@ Create an RPC connection with the parent process from the child.
 **Returns:**
 ```typescript
 {
-  parentProxy: Asyncify<T>  // Proxy to call parent's methods
+  parentProxy: WithTimeout<Asyncify<T>>  // Proxy to call parent's methods
+                                         // (supports .withTimeout(ms) per call)
   destroy: () => void       // Clean up connection
   on: (event, handler) => void    // Register event listener
   off: (event, handler) => void   // Unregister event listener
@@ -180,7 +182,8 @@ Create an RPC connection with the parent process from the child.
 
 ```typescript
 interface RPCProxyOptions {
-  timeout?: number;       // Request timeout in milliseconds (default: 30000)
+  timeout?: number;       // Request timeout in milliseconds (default: 30000).
+                          // Set to 0 (or negative / Infinity) to wait indefinitely
   debug?: boolean;        // Enable debug logging (default: false)
   errorHandler?: (error: Error, method: string, args: unknown[]) => void;
   logger?: (message: string, ...args: unknown[]) => void;
@@ -252,13 +255,13 @@ try {
 
 ### Timeout Handling
 
-Set timeouts for long-running operations:
+Set a default timeout for all calls on a connection:
 
 ```typescript
 const { childProxy } = createParentRPC(
   child,
   new ParentImpl(),
-  { timeout: 5000 }  // 5 second timeout
+  { timeout: 5000 }  // 5 second timeout for every call
 );
 
 try {
@@ -269,6 +272,32 @@ try {
   }
 }
 ```
+
+#### Per-Call Timeout with `withTimeout()`
+
+Override the timeout for a single call without affecting others:
+
+```typescript
+// Uses the connection default timeout
+const quick = await childProxy.quickTask();
+
+// This call times out after 60 seconds
+const slow = await childProxy.withTimeout(60000).slowTask();
+```
+
+#### Disable Timeout (Wait Indefinitely)
+
+Set `timeout` to `0` (or a negative number / `Infinity`) to wait forever:
+
+```typescript
+// Connection level: no timeout for any call
+const { childProxy } = createParentRPC(child, new ParentImpl(), { timeout: 0 });
+
+// Per-call level: only this call waits indefinitely
+const result = await childProxy.withTimeout(0).veryLongTask();
+```
+
+> **Note:** A call without a timeout only settles when the remote side responds, the connection closes, or `destroy()` is called. Use it only for tasks you fully control.
 
 ### Multiple Child Processes
 
